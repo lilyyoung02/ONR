@@ -1,9 +1,13 @@
 import streamlit as st
 
-st.set_page_config(page_title="Blood Logistics Tool", layout="wide")
+st.set_page_config(page_title="Blood Logistics Tool Input", layout="wide")
 
 st.title("ONR Blood Mangement Support Tool")
 st.sidebar.header("User Input")
+
+# Create a dictionary to store user data
+if "user_data" not in st.session_state:
+    st.session_state.user_data = []
 
 #st.title("User Input")
 #st.headers
