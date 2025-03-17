@@ -15,7 +15,8 @@ with st.form("user_form"):
     platoonNum = st.number_input("Enter the corresponding platoon number:")
     currentCombatLevel = st.number_input("Enter the current comabt level:")
     predictedCompabtLevel = st.number_input("Enter predicted combat level")
-
+    submit = st.form_submit_button("Submit")
+    
     if submit:
         new_entry = {"name": name, "Platoon Number": platoonNum, "current comabt level": currentCombatLevel, "predicted comabt level": predictedCompabtLevel}
         st.session_state.user_data.append(new_entry)
