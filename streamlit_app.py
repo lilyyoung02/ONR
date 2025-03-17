@@ -10,7 +10,7 @@ st.sidebar.header("User Input")
 # Create a dictionary to store user data
 if "user_data" not in st.session_state:
     st.session_state.user_data = []
-with st.form("user_form"):
+with st.form("ONR Blood Mangement Support Tool"):
     name = st.text_input("Enter your name:")
     platoonNum = st.number_input("Enter the corresponding platoon number:")
     currentCombatLevel = st.number_input("Enter the current comabt level:")
