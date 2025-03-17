@@ -3,7 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Blood Logistics Tool Input", layout="wide")
 
 st.title("ONR Blood Mangement Support Tool")
-st.sidebar.header("User Input")
+st.sidebar.header("User Input 2")
 
 # Create a dictionary to store user data
 if "user_data" not in st.session_state:
