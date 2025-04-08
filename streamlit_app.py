@@ -13,40 +13,42 @@ if "user_data" not in st.session_state:
 
 # Create the form
 with st.form("blood_management_form"):
-    simulation_days = st.number_input("Length of Simulation in Days:", min_value=1)
-    med_log_company = st.number_input("Medical Logistics Company ID:", min_value=1)
+    simulation_days = st.number_input("Length of Simulation in Days:", min_value=0)
+    med_log_company = st.number_input("Medical Logistics Company ID:", min_value=0)
     blood_inventory = st.number_input("Fresh Whole Blood Inventory on Hand (pints):", min_value=0)
 
-    # Transportation schedule dropdowns
+    # Transportation Schedule Section
     st.markdown("### Transportation Schedule")
-    transport_day = st.selectbox("Select Day:", options=[
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
-    ])
-    transport_time = st.time_input("Select Military Time:")
+
     transport_frequency = st.selectbox("Select Frequency:", options=[
-        "Daily", "Weekly", "Bi-weekly", "Monthly"
+        "Daily", "Weekly", "Bi-weekly", "Monthly", "Other"
     ])
+
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    selected_days = st.multiselect("Select Delivery Days:", days_of_week, key="delivery_days")
+
+    pickup_time = st.time_input("Pickup Time (24hr):")
+    dropoff_time = st.time_input("Drop-off Time (24hr):")
+    transport_capacity = st.number_input("Transportation Capacity (pints per trip):", min_value=0)
 
     # Number of platoons
     num_med_platoons = st.number_input("Number of Medical Platoons:", min_value=0, step=1)
 
-    # Dynamic input for each platoon's ID, size, location, and conflict likelihood
+    # Dynamic inputs for each platoon
     platoon_data = []
     for i in range(int(num_med_platoons)):
         st.markdown(f"### Platoon {i + 1}")
-        platoon_id = st.number_input(f"Enter ID for Platoon {i + 1} (Integer):", format="%d", step=1, key=f"platoon_id_{i}")
-        platoon_size = st.number_input(f"Enter Size (people) for Platoon {i + 1}:", min_value=1, key=f"platoon_size_{i}")
-        latitude = st.number_input(f"Enter Latitude for Platoon {i + 1}:", format="%.6f", key=f"latitude_{i}")
-        longitude = st.number_input(f"Enter Longitude for Platoon {i + 1}:", format="%.6f", key=f"longitude_{i}")
+        platoon_id = st.number_input(f"Enter ID for Platoon {i + 1}:", format="%d", step=1, min_value=0, key=f"platoon_id_{i}")
+        platoon_size = st.number_input(f"Enter Size (people) for Platoon {i + 1}:", min_value=0, key=f"platoon_size_{i}")
+        delivery_time = st.time_input(f"Expected Delivery Time for Platoon {i + 1}:", key=f"delivery_time_{i}")
         conflict_likelihood = st.slider(
-            f"Likelihood of Conflict Tomorrow (0–5) for Platoon {i + 1} - 0: no conflict, 1: slight chance of conflict or training accident, 2: medium chance of conflict or training accident, 3: 50/50 chance of experiencing conflict, 4: high chance of light conflict, low chance of extreme conflict , 5: will experience high amounts of conflict",
+            f"Likelihood of Conflict Tomorrow (0–5) for Platoon {i + 1}:",
             min_value=0, max_value=5, value=0, step=1, key=f"conflict_{i}"
         )
         platoon_data.append({
             "Platoon ID": int(platoon_id),
             "Platoon Size": platoon_size,
-            "Latitude": latitude,
-            "Longitude": longitude,
+            "Expected Delivery Time": delivery_time.strftime("%H:%M"),
             "Conflict Likelihood": conflict_likelihood
         })
 
@@ -54,20 +56,32 @@ with st.form("blood_management_form"):
 
 # Process form submission
 if submit:
-    if all([simulation_days, med_log_company, blood_inventory]) and all(
-            p["Platoon ID"] is not None and
-            p["Platoon Size"] and
-            p["Latitude"] is not None and
-            p["Longitude"] is not None
-            for p in platoon_data):
+    # Validations
+    if dropoff_time <= pickup_time:
+        st.error("Drop-off time must be after pickup time.")
+    elif transport_frequency == "Weekly" and len(selected_days) != 1:
+        st.error("Please select exactly one delivery day for weekly frequency.")
+    elif transport_frequency == "Bi-weekly" and len(selected_days) != 2:
+        st.error("Please select exactly two delivery days for bi-weekly frequency.")
+    elif len(selected_days) == 0:
+        st.error("Please select at least one delivery day.")
+    elif all(x is not None for x in [simulation_days, med_log_company, blood_inventory, transport_capacity]) and all(
+        p["Platoon ID"] is not None and
+        p["Platoon Size"] is not None and
+        p["Expected Delivery Time"] is not None and
+        p["Conflict Likelihood"] is not None
+        for p in platoon_data):
+
         new_entry = {
             "Length of Simulation in Days": simulation_days,
             "Medical Logistics Company": med_log_company,
             "Fresh Whole Blood Inventory on Hand (pints)": blood_inventory,
             "Transportation Schedule": {
-                "Day": transport_day,
-                "Time": transport_time.strftime("%H:%M"),
-                "Frequency": transport_frequency
+                "Frequency": transport_frequency,
+                "Delivery Days": selected_days,
+                "Pickup Time": pickup_time.strftime("%H:%M"),
+                "Drop-off Time": dropoff_time.strftime("%H:%M"),
+                "Capacity (pints per trip)": transport_capacity
             },
             "Number of Medical Platoons": num_med_platoons,
             "Platoons": platoon_data
@@ -75,7 +89,7 @@ if submit:
         st.session_state.user_data.append(new_entry)
         st.success("Data added successfully!")
     else:
-        st.error("Please fill in all required fields for each platoon.")
+        st.error("Please fill in all fields completely.")
 
 # Display stored data
 st.subheader("Stored User Data")
